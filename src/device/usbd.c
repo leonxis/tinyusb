@@ -527,6 +527,15 @@ void tud_sof_cb_enable(bool en) {
   usbd_sof_enable(_usbd_rhport, SOF_CONSUMER_USER, en);
 }
 
+// User SOF ISR hook, invoked in interrupt context from dcd_event_handler
+static tud_sof_isr_t _sof_isr = NULL;
+
+void tud_sof_isr_set(tud_sof_isr_t sof_isr)
+{
+  _sof_isr = sof_isr;
+  dcd_sof_enable(_usbd_rhport, _sof_isr != NULL);
+}
+
 bool tud_inited(void) {
   return _usbd_rhport != RHPORT_INVALID;
 }
@@ -1426,6 +1435,9 @@ TU_ATTR_FAST_FUNC void dcd_event_handler(dcd_event_t const* event, bool in_isr) 
           driver->sof(event->rhport, event->sof.frame_count);
         }
       }
+
+      // SOF user handler in ISR context
+      if (_sof_isr) _sof_isr(event->sof.frame_count);
 
       // Some MCUs after running dcd_remote_wakeup() does not have way to detect the end of remote wakeup
       // which last 1-15 ms. DCD can use SOF as a clear indicator that bus is back to operational

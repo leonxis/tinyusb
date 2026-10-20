@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+typedef void (*tud_sof_isr_t) (uint32_t frame_count);
+
 // ConfigID for tud_configure()
 enum {
   TUD_CFGID_INVALID = 0,
@@ -140,6 +142,10 @@ bool tud_connect(void);
 
 // Enable or disable the Start Of Frame callback support
 void tud_sof_cb_enable(bool en);
+
+// Set Start-of-frame (1ms interval) IRQ handler
+// NULL means disabled, frame_count may not be supported on mcus
+void tud_sof_isr_set(tud_sof_isr_t sof_isr);
 
 // Carry out Data and Status stage of control transfer
 // - If len = 0, it is equivalent to sending status only
