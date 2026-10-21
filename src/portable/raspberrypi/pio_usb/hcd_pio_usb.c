@@ -92,6 +92,16 @@ bool hcd_port_connect_status(uint8_t rhport) {
   root_port_t *root = PIO_USB_ROOT_PORT(pio_rhport);
   port_pin_status_t line_state = pio_usb_bus_get_line_state(root);
 
+  // Pico-PIO-USB only checks a root port for disconnect while it is running,
+  // and a new connection stays suspended until the bus reset. If usbh abandons
+  // enumeration because the line is at SE0 (device unplugged or dropped off),
+  // the port would otherwise stay connected+suspended forever and no further
+  // attach/detach would ever be reported. Release it so the next connection
+  // is detected.
+  if (line_state == PORT_PIN_SE0 && root->connected && root->suspended) {
+    root->connected = false;
+  }
+
   return line_state != PORT_PIN_SE0;
 }
 
